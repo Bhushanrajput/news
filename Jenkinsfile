@@ -1,4 +1,5 @@
 pipeline {
+
     agent any
 
     environment {
@@ -10,7 +11,7 @@ pipeline {
         stage('Clone Repository') {
             steps {
                 git branch: 'main',
-                    url: 'https://github.com/Bhushanrajput/news.git'
+                url: 'https://github.com/Bhushanrajput/news.git'
             }
         }
 
@@ -29,9 +30,8 @@ pipeline {
                         passwordVariable: 'DOCKER_PASS'
                     )
                 ]) {
-                    bat '''
-                    echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
-                    '''
+
+                    bat 'docker login -u %DOCKER_USER% -p %DOCKER_PASS%'
                 }
             }
         }
@@ -42,44 +42,26 @@ pipeline {
             }
         }
 
-        stage('Stop Old Container') {
+        stage('Deploy Kubernetes') {
             steps {
-                bat '''
-                docker stop news-container
-                exit /b 0
-                '''
+
+                bat 'kubectl apply -f deployment.yaml'
+
+                bat 'kubectl apply -f service.yaml'
+
+                bat 'kubectl rollout restart deployment/news-deployment'
             }
         }
 
-        stage('Remove Old Container') {
+        stage('Verify Deployment') {
             steps {
-                bat '''
-                docker rm news-container
-                exit /b 0
-                '''
+
+                bat 'kubectl get deployments'
+
+                bat 'kubectl get pods'
+
+                bat 'kubectl get svc'
             }
-        }
-
-        stage('Pull Latest Image') {
-            steps {
-                bat 'docker pull %IMAGE_NAME%'
-            }
-        }
-
-        stage('Run New Container') {
-            steps {
-                bat 'docker run -d -p 8082:80 --name news-container %IMAGE_NAME%'
-            }
-        }
-    }
-
-    post {
-        success {
-            echo 'Pipeline executed successfully!'
-        }
-
-        failure {
-            echo 'Pipeline execution failed!'
         }
     }
 }

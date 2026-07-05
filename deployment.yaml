@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: news-deployment
+
+spec:
+  replicas: 2
+
+  selector:
+    matchLabels:
+      app: news
+
+  template:
+    metadata:
+      labels:
+        app: news
+
+    spec:
+      containers:
+      - name: news
+        image: bhushan432/news:latest
+
+        ports:
+        - containerPort: 80
